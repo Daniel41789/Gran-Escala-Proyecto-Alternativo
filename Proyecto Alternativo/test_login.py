@@ -1,47 +1,37 @@
-import unittest
 import mysql.connector
-from main import iniciar_sesion
+import unittest
 
-class TestIniciarSesion(unittest.TestCase):
+def login(conn, username, password):
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM usuarios WHERE usuario = %s AND contraseña = %s"
+    cursor.execute(query, (username, password))
+
+    user = cursor.fetchone()
+
+    cursor.close()
+
+    return user is not None
+
+class TestLogin(unittest.TestCase):
     def setUp(self):
-        # Configurar la conexión a la base de datos de prueba
         self.conn = mysql.connector.connect(
             host="localhost",
             user="root",
             password="Daniel4178.",
-            database="micro_x_test"  # Utiliza una base de datos de prueba separada
+            database="micro_x" 
         )
-        self.cursor = self.conn.cursor()
-
-        # Crea la tabla de usuarios de prueba y agrega algunos datos de prueba
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-                                id INT AUTO_INCREMENT PRIMARY KEY,
-                                usuario VARCHAR(255),
-                                contraseña VARCHAR(255)
-                              )''')
-        self.cursor.execute('''INSERT INTO usuarios (usuario, contraseña) VALUES (%s, %s)''', ('Furina', '123'))
 
     def tearDown(self):
-        # Cerrar la conexión y revertir cualquier cambio en la base de datos
-        self.cursor.execute("DROP TABLE IF EXISTS usuarios")
-        self.conn.commit()
-        self.cursor.close()
-        self.conn.close()
+        self.conn.close() #Cierre de conexión
 
-    def test_iniciar_sesion_exitoso(self):
-        # Ejecutar la función de inicio de sesión con credenciales válidas
-        resultado = iniciar_sesion("Furina", "123", self.conn)
+    def test_login_correcto(self):
+        # Aquí se ingresa el usaurio y contraseña correctos, en caso de que sean incorrectos la prueba no pasa
+        self.assertTrue(login(self.conn, "tao", "123"))
 
-        # Verificar que el resultado sea True (inicio de sesión exitoso)
-        self.assertTrue(resultado)
-
-    def test_iniciar_sesion_fallido(self):
-        # Ejecutar la función de inicio de sesión con credenciales inválidas
-        resultado = iniciar_sesion("usuario_invalido", "contraseña_invalida", self.conn)
-
-        # Verificar que el resultado sea False (inicio de sesión fallido)
-        self.assertFalse(resultado)
+    def test_login_incorrecto(self):
+        # Por otro lado, aquí se hace el test de inicio de sesión incorrecto, En caso de ingresar los datos correctos no se pasa la prueba xD
+        self.assertFalse(login(self.conn, "Furina", "contraseña_incorrecta"))
 
 if __name__ == '__main__':
-    # Ejecutar las pruebas unitarias y mostrar los resultados en la terminal
-    unittest.main(verbosity=2)
+    unittest.main()
